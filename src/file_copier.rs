@@ -1,5 +1,4 @@
 use std::fs;
-use std::io;
 use std::path::Path;
 
 pub struct FileCopier;
@@ -9,7 +8,7 @@ impl FileCopier {
         FileCopier
     }
 
-    pub fn copy_file(&self, source_file: &str, destination_file: &str) -> Result<(), String> {
+    pub fn copy_file(&self, source_file: &str, destination_file: &str, overwrite: bool) -> Result<(), String> {
         let source_path = Path::new(source_file);
         let destination_path = Path::new(destination_file);
 
@@ -18,9 +17,15 @@ impl FileCopier {
             return Err(format!("Source file {} does not exist.", source_file));
         }
 
-        // Check if the destination file exists
+        // Check if the destination file exists delete it
         if destination_path.exists() {
-            return Err(format!("Destination file {} already exists.", destination_file));
+            if !overwrite {
+                return Err(format!("Destination file {} already exists.", destination_file));
+            }
+            if let Err(err) = fs::remove_file(destination_path) {
+                return Err(format!("Failed to delete destination file: {}", err));
+            }
+
         }
 
         // Create the destination directory if it doesn't exist

@@ -1,0 +1,63 @@
+use std::fs;
+use std::io::Read;
+use console::Style;
+use similar::{ChangeTag, TextDiff};
+
+pub struct DiffChecker {
+}
+
+impl DiffChecker {
+    pub fn new() -> DiffChecker {
+        DiffChecker{
+        }
+    }
+
+    fn calculate_diffs(&self, source: &String, destination: &String, inline:bool){
+        let diff = TextDiff::from_lines(
+            source,
+            destination
+        );
+
+        if !inline{
+            println!("Source vs Destination");
+            for change in diff.iter_all_changes() {
+                let (sign, style) = match change.tag() {
+                    ChangeTag::Delete => ("-", Style::new().red()),
+                    ChangeTag::Insert => ("+", Style::new().green()),
+                    ChangeTag::Equal => (" ", Style::new()),
+                };
+                print!("{}{}", style.apply_to(sign).bold(), style.apply_to(change));
+            }
+        }
+
+    }
+
+    pub fn compare_files(&self, source_file: &str, destination_file: &str) -> bool {
+        let mut source_content = Vec::new();
+        let mut destination_content = Vec::new();
+
+        // Read the content of the source file
+        if let Ok(mut source_file) = fs::File::open(source_file) {
+            if let Err(_) = source_file.read_to_end(&mut source_content) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+        // Read the content of the destination file
+        if let Ok(mut destination_file) = fs::File::open(destination_file) {
+            if let Err(_) = destination_file.read_to_end(&mut destination_content) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
+       let source_string: String = source_content.iter().map(|b| *b as char).collect::<String>();
+       let destination_string: String = destination_content.iter().map(|b| *b as char).collect::<String>();
+
+       self.calculate_diffs(&source_string, &destination_string, false);
+        return true;
+    }
+}
